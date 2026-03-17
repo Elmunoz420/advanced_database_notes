@@ -57,3 +57,17 @@ LEFT JOIN employees e ON b.building_name = e.building;
 --   despues de un LEFT JOIN — patron clasico para encontrar "huerfanos"
 -- DISTINCT evita repetir el mismo building_name por cada empleado
 -- ============================================================
+
+-- ============================================================
+-- DATALEMUR INTERVIEW QUESTION — Page With No Likes (Facebook)
+-- Tablas: pages (page_id, page_name)
+--         page_likes (user_id, page_id, liked_date)
+-- Objetivo: Encontrar las páginas que no tienen ningún "like".
+-- ============================================================
+
+SELECT 
+    p.page_id
+FROM pages p
+LEFT JOIN page_likes l ON p.page_id = l.page_id
+WHERE l.page_id IS NULL
+ORDER BY p.page_id ASC;
