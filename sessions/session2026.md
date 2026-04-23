@@ -1,32 +1,35 @@
-# Session – 2026-04-16
+# Session – 2026-04-23
 
 ## Topics covered
-- Indexes in Oracle 23ai: B-Tree structure and how the Cost-Based Optimizer (CBO) decides when to use them
-- Cardinality and selectivity: high vs low cardinality columns and their impact on index usefulness
-- Index range scans vs full table scans: how the size of a range query affects the execution plan
-- Composite indexes and the leading column rule
-- Function-based index trap: how wrapping a column in a function breaks index usage
-- Real-world index design decisions: OLTP vs reporting tables, unique indexes, bitmap indexes
+- Transaction fundamentals: what a transaction is and why atomicity matters
+- COMMIT: permanently saving all changes made since the last commit
+- ROLLBACK: undoing all uncommitted changes back to the last commit point
+- SAVEPOINT: creating named checkpoints inside a transaction for partial rollback
+- The CHECK constraint as a passive guard vs transactions as an active control flow
+- Stored procedures with transaction control: COMMIT on success, ROLLBACK + re-raise on error
+- Transaction boundary ownership: who should call COMMIT — the procedure or the caller?
+- Functions vs procedures in SQL context: why functions can appear in SELECT but procedures cannot
 
 ## What I understood
-- The CBO uses statistics to estimate how many rows a query returns and picks the cheapest access path
-- Low cardinality columns (like site_id with 5 values) are bad candidates for B-Tree indexes because each value returns too many rows (~20%)
-- A composite index (patient_id, visit_date) can be used with the leading column alone but NOT with the trailing column alone
-- Applying a function to an indexed column in the WHERE clause forces a full table scan — apply the function to the literal instead
-- For unique columns like email, a UNIQUE index enforces data integrity AND gives the fastest possible access (INDEX UNIQUE SCAN)
+- A transaction groups multiple DML statements (INSERT, UPDATE, DELETE) into a single atomic unit — either all succeed or none do
+- ROLLBACK TO SAVEPOINT lets you undo only part of a transaction while keeping earlier changes intact; useful when one step in a multi-step flow fails and the rest are still valid
+- Stored procedures should validate inputs first, then execute DML, then COMMIT — and ROLLBACK + re-raise in the EXCEPTION block so the caller knows something went wrong
+- Putting COMMIT inside a procedure that gets called from a larger transaction is dangerous: it permanently saves the outer transaction's work too, removing the caller's ability to roll back
+- Functions return a value and can be used in SQL expressions (SELECT, WHERE); procedures execute logic and can only be called from PL/SQL blocks or with EXEC — never from a query
 
 ## What is still confusing
-- Exactly at what percentage of rows the CBO switches from index scan to full scan (seems to vary by hardware and block size)
-- When bitmap indexes are actually safe to use in practice vs when they cause lock contention
-- How to interpret the Cost column in DBMS_XPLAN.DISPLAY and compare plans reliably
+- At what point does Oracle automatically roll back vs requiring an explicit ROLLBACK from the developer?
+- How transaction isolation levels (READ COMMITTED, SERIALIZABLE) affect what one session can see while another has uncommitted changes
+- Whether SAVEPOINT names need to be unique within a transaction or can be reused
 
 ## Questions
-- Can the CBO be forced to use an index even when it prefers a full scan (hints)?
-- What happens to index performance as the table grows — does the index need to be rebuilt periodically?
-- How does Oracle handle index maintenance during a bulk INSERT of millions of rows?
+- If a stored procedure calls another stored procedure that also has a COMMIT, does the inner COMMIT affect the outer transaction?
+- Can you set a SAVEPOINT inside a stored procedure and have the caller roll back to it from outside the procedure?
+- What happens to open transactions if a session disconnects without committing?
 
 ## Related concepts
-- [Indexes](../concepts/indexes.md)
+- [Transactions](../concepts/transactions.md)
 
 ## Resources used
-- See `resources/`
+- Class exercises: accounts table (Alice, Bob, Charlie) — manual transfers with BEGIN/COMMIT/ROLLBACK/SAVEPOINT
+- deposit_funds stored procedure — input validation, COMMIT on success, ROLLBACK + re-raise on exception
